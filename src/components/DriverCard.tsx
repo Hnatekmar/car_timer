@@ -1,4 +1,4 @@
-import { Button, Paper, TextField } from "@mui/material";
+import { Button, Chip, Paper, TextField, Typography } from "@mui/material";
 import { TimePicker } from "@mui/x-date-pickers";
 
 import CheckIcon from "@mui/icons-material/Check";
@@ -22,6 +22,8 @@ function DriverCard({
   handleStart: () => void;
   handleDelete: () => void;
 }) {
+  const state = "done"; // "notArrived" | "service" | "done" vyplnit dle výpočtů času
+
   return (
     <Paper
       variant="outlined"
@@ -64,7 +66,25 @@ function DriverCard({
         />
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        {!driver.started && (
+        {driver.started ? (
+          <Chip
+            label={
+              state === "notArrived"
+                ? "Nedorazil"
+                : state === "service"
+                ? "Servis"
+                : "Dokončeno"
+            }
+            color={
+              state === "notArrived"
+                ? "info"
+                : state === "service"
+                ? "warning"
+                : "success"
+            }
+            variant="contained"
+          />
+        ) : (
           <Button
             disabled={
               driver.name === "" ||
@@ -80,7 +100,7 @@ function DriverCard({
           </Button>
         )}
         <Button
-          variant="contained"
+          variant="outlined"
           color="error"
           startIcon={<DeleteIcon />}
           onClick={handleDelete}
