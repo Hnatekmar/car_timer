@@ -5,6 +5,15 @@ import CheckIcon from "@mui/icons-material/Check";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { DefaultDriver } from "../App";
 
+import dayjs, { Dayjs } from "dayjs";
+import duration from "dayjs/plugin/duration";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(duration);
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 function DriverCard({
   actualTime,
   driver,
@@ -14,15 +23,36 @@ function DriverCard({
   handleStart,
   handleDelete,
 }: {
-  actualTime: any;
+  actualTime: Dayjs;
   driver: DefaultDriver;
   setName: (newName: string) => void;
-  changeArrivalTime: (value: any, context: any) => void;
-  changeServiceTime: (value: any, context: any) => void;
+  changeArrivalTime: (value: Dayjs | null, context: any) => void;
+  changeServiceTime: (value: Dayjs | null, context: any) => void;
   handleStart: () => void;
   handleDelete: () => void;
 }) {
-  const state = "done"; // "notArrived" | "service" | "done" vyplnit dle výpočtů času
+  const timeToStart =
+    driver.arrivalTime !== null ? driver.arrivalTime.diff(actualTime) : null;
+  const currentServiceTime =
+    driver.serviceTime !== null && timeToStart !== null
+      ? dayjs
+          .duration({
+            hours: driver.serviceTime.get("hour"),
+            minutes: driver.serviceTime.get("minute"),
+            seconds: driver.serviceTime.get("second"),
+            milliseconds: driver.serviceTime.get("millisecond"),
+          })
+          .asMilliseconds() + timeToStart
+      : null;
+
+  let state = "";
+  if (timeToStart !== null && currentServiceTime !== null)
+    state =
+      timeToStart > 0
+        ? "notArrived"
+        : currentServiceTime > 0
+        ? "service"
+        : "done";
 
   return (
     <Paper
@@ -41,6 +71,7 @@ function DriverCard({
           value={driver.name}
           onChange={(e) => setName(e.target.value)}
         />
+
         <TimePicker
           readOnly={driver.started}
           ampm={false}
@@ -49,7 +80,7 @@ function DriverCard({
           sx={{ width: 200 }}
           value={
             driver.started
-              ? driver.arrivalTime - actualTime
+              ? dayjs.utc(state === "notArrived" ? timeToStart : 0)
               : driver.arrivalTime
           }
           onChange={changeArrivalTime}
@@ -61,7 +92,17 @@ function DriverCard({
           label="Doba servisu"
           views={["hours", "minutes", "seconds"]}
           sx={{ width: 200 }}
-          value={driver.serviceTime}
+          value={
+            driver.started
+              ? dayjs.utc(
+                  state === "service"
+                    ? currentServiceTime
+                    : state === "notArrived"
+                    ? driver.serviceTime
+                    : 0
+                )
+              : driver.serviceTime
+          }
           onChange={changeServiceTime}
         />
       </div>
@@ -82,7 +123,6 @@ function DriverCard({
                 ? "warning"
                 : "success"
             }
-            variant="contained"
           />
         ) : (
           <Button

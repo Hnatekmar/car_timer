@@ -5,20 +5,23 @@ import AddIcon from "@mui/icons-material/Add";
 
 import DriverCard from "./components/DriverCard";
 
+import dayjs, { Dayjs } from "dayjs";
 export class DefaultDriver {
   name = "";
   started = false;
-  arrivalTime = null;
-  serviceTime = null;
+  arrivalTime: Dayjs | null = null;
+  serviceTime: Dayjs | null = null;
 }
 
 function App() {
-  const [actualTime, setActualTime] = useState(new Date());
+  const [actualTime, setActualTime] = useState(dayjs());
   const [drivers, setDrivers] = useState([new DefaultDriver()]);
   const [newDriverHover, setNewDriverHover] = useState(false);
 
   useEffect(() => {
-    setInterval(() => setActualTime(new Date()), 1000);
+    setInterval(() => {
+      setActualTime(dayjs());
+    }, 1000);
   }, []);
 
   return (
@@ -40,16 +43,9 @@ function App() {
           zIndex: 1,
         }}
       >
-        <Typography variant="h1">{`${actualTime
-          .getHours()
-          .toString()
-          .padStart(2, "0")}:${actualTime
-          .getMinutes()
-          .toString()
-          .padStart(2, "0")}:${actualTime
-          .getSeconds()
-          .toString()
-          .padStart(2, "0")}`}</Typography>
+        <Typography variant="h1">
+          {dayjs(actualTime).format("HH:mm:ss")}
+        </Typography>
       </Paper>
       <div
         style={{
@@ -63,6 +59,7 @@ function App() {
       >
         {drivers.map((driver, i) => (
           <DriverCard
+            key={i}
             actualTime={actualTime}
             driver={driver}
             setName={(newName) =>
@@ -76,6 +73,10 @@ function App() {
               setDrivers((prev) => {
                 const newDrivers = [...prev];
                 newDrivers[i].started = true;
+                if ((newDrivers[i].arrivalTime as Dayjs) < actualTime)
+                  newDrivers[i].arrivalTime = (
+                    newDrivers[i].arrivalTime as Dayjs
+                  ).add(dayjs.duration(1, "days"));
                 return newDrivers;
               });
             }}
